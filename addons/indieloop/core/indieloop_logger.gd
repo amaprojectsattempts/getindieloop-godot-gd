@@ -1,0 +1,2 @@
+class_name IndieLoopLogger
+extends RefCounted
