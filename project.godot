@@ -13,7 +13,6 @@ config_version=5
 config/name="IndieLoop"
 run/main_scene="uid://b18o2h3neunjw"
 config/features=PackedStringArray("4.4", "C#", "Forward Plus")
-config/icon="res://icon.svg"
 
 [dotnet]
 
