@@ -141,6 +141,18 @@ func _enter_tree():
 	_http_client.request_completed.connect(_on_request_completed)
 
 
+## Creates and returns a future that is immediately fulfilled with an error.
+func fail_request(error_msg: String, result_code: int = HTTPRequest.RESULT_CONNECTION_ERROR, future: RequestFuture = null) -> RequestFuture:
+	printerr(error_msg)
+	
+	if not is_instance_valid(future):
+		future = RequestFuture.new()
+	
+	var error_result := ResponseResult.new(result_code, -1, [], PackedByteArray(), error_msg, 0)
+	future.call_deferred("_fulfill", error_result)
+
+	return future
+
 ## Queues a new HTTP request and returns a future to await the result.
 func send_request(url: String, method: int = HTTPClient.METHOD_GET, headers: PackedStringArray = [], body: String = "") -> RequestFuture:
 	var future := RequestFuture.new()
@@ -180,13 +192,9 @@ func _process_queue():
 
 	if error != OK:
 		var err_msg := "HTTPRequestQueue failed to start request to %s: %s" % [request_data.url, error_string(error)]
-		printerr(err_msg)
-
 		var future: RequestFuture = _http_client.get_meta("current_future")
-		if is_instance_valid(future):
-			# Fulfill the future with an error result since the request could not be sent.
-			var error_result := ResponseResult.new(HTTPRequest.RESULT_CANT_CONNECT, -1, [], PackedByteArray(), err_msg, 0)
-			future._fulfill(error_result)
+		
+		fail_request(err_msg, error, future)
 
 		_http_client.remove_meta("current_future")
 		_http_client.remove_meta("start_time_ms")
