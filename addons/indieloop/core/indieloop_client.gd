@@ -20,6 +20,7 @@ var sdk_user_agent: String = "IndieLoop-Godot-SDK/%s" % sdk_version
 var config: IndieLoopConfig
 var system_info: IndieLoopSystemInfo = IndieLoopSystemInfo.new()
 var performance_metrics: IndieLoopPerformanceMetrics = IndieLoopPerformanceMetrics.new()
+var breadcrumbs: IndieLoopBreadcrumbs = IndieLoopBreadcrumbs.new()
 
 # The dedicated request queue handler.
 var _http: IndieLoopHTTP
