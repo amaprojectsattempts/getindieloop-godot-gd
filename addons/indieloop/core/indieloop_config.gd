@@ -18,4 +18,19 @@ var collect_system_info: bool = true
 var collect_performance_metrics: bool = true
 var collect_logs: bool = true
 var collect_crash_report: bool = true
+
 var http_client: IndieLoopHTTP
+
+
+func to_dict() -> Dictionary:
+    return {
+        "project_token": project_token,
+        "game_version": game_version,
+        "collect_system_info": collect_system_info,
+        "collect_performance_metrics": collect_performance_metrics,
+        "collect_logs": collect_logs,
+        "collect_crash_report": collect_crash_report
+    }
+
+func _to_string() -> String:
+    return str(self.to_dict())

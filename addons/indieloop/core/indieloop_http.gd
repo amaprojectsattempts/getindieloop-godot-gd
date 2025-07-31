@@ -4,25 +4,17 @@ extends Node
 ## Manages a sequential queue of HTTP requests, returning a future for each one.
 ## This node must be added to the scene tree to function correctly.
 
-#-----------------------------------------------------------------------------
-# Data Classes
-#-----------------------------------------------------------------------------
+#region DataClasses
 
 ## Encapsulates the complete result of a completed HTTP request.
 class ResponseResult extends RefCounted:
 	## The low-level result code from the HTTPRequest node.
 	var result_code: int
-	## The HTTP status code from the server (e.g., 200 for OK, 404 for Not Found).
 	var response_code: int
-	## The raw response body.
 	var body_raw: PackedByteArray
-	## The raw response body as a string.
 	var body_string: String
-	## The parsed JSON data if the response body was valid JSON, otherwise null.
 	var body_json: Variant
-	## A string describing an error if one occurred during the request process, otherwise null.
 	var error: String
-	## The total time the request took, from sending to receiving, in milliseconds.
 	var duration_ms: int
 
 	var _headers: PackedStringArray
@@ -38,7 +30,6 @@ class ResponseResult extends RefCounted:
 		self.error = p_error
 		self.duration_ms = p_duration_ms
 
-		# For convenience, try to parse the body as JSON automatically.
 		var json_parser := JSON.new()
 		if json_parser.parse(body_string) == OK:
 			self.body_json = json_parser.get_data()
@@ -108,16 +99,28 @@ class ResponseResult extends RefCounted:
 
 		return ImageTexture.create_from_image(image)
 
+	func to_dict() -> Dictionary:
+		return {
+			"result_code": result_code,
+			"response_code": response_code,
+			"body_raw": body_raw,
+			"body_string": body_string,
+			"body_json": body_json,
+			"error": error,
+			"duration_ms": duration_ms,
+			"headers": get_headers_as_dictionary()
+		}
+	
+	func _to_string() -> String:
+		return str(self.to_dict())
 
 ## A future that represents the result of a request that will complete later.
 class RequestFuture extends RefCounted:
-	## Emitted when the request completes.
 	signal completed(result: ResponseResult)
 
 	var _unique_id: int = randi()
 	var _is_complete: bool = false
 
-	# Fulfills the future with a result, triggering the 'completed' signal.
 	func _fulfill(result: ResponseResult):
 		if _is_complete:
 			return
@@ -126,9 +129,22 @@ class RequestFuture extends RefCounted:
 
 		completed.emit(result)
 
-#-----------------------------------------------------------------------------
-# Queue Logic
-#-----------------------------------------------------------------------------
+	func is_complete() -> bool:
+		return _is_complete
+
+	func to_dict() -> Dictionary:
+		return {
+			"unique_id": _unique_id,
+			"is_complete": _is_complete
+		}
+	
+	func _to_string() -> String:
+		return str(self.to_dict())
+
+#endregion
+
+
+#region Implementation
 
 var _http_client: HTTPRequest
 var _request_queue: Array[Dictionary] = []
@@ -219,3 +235,5 @@ func _on_request_completed(result: int, response_code: int, headers: PackedStrin
 	_is_processing = false
 
 	_process_queue()
+
+#endregion

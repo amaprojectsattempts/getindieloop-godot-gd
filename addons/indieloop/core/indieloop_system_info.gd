@@ -1,26 +1,25 @@
 class_name IndieLoopSystemInfo
 extends RefCounted
 
-#-----------------------------------------------------------------------------
-# Data Classes
-#-----------------------------------------------------------------------------
+#region DataClasses
 
-## This class represents the RAM information in various units.
 class Ram:
 	var bytes: int
 	var kilobytes: float
 	var megabytes: float
 	var gigabytes: float
 
-	func _to_string() -> String:
-		return str(Dictionary({
+	func to_dict() -> Dictionary:
+		return {
 			"bytes": bytes,
 			"kilobytes": kilobytes,
 			"megabytes": megabytes,
 			"gigabytes": gigabytes
-		}))
+		}
 
-## This class represents the system information collected by the IndieLoop SDK.
+	func _to_string() -> String:
+		return str(self.to_dict())
+
 class SystemInfo:
 	var os: String
 	var cpu_name: String
@@ -36,16 +35,15 @@ class SystemInfo:
 	var language: String
 	var unique_device_id: String
 	var device_model: String
-
-
-	func _to_string() -> String:
-		return str(Dictionary({
+	
+	func to_dict() -> Dictionary:
+		return {
 			"os": os,
 			"cpu_name": cpu_name,
 			"cpu_cores": cpu_cores,
 			"gpu_name": gpu_name,
 			"gpu_driver": gpu_driver,
-			"ram": ram,
+			"ram": ram.to_dict(),
 			"game_resolution": game_resolution,
 			"screen_resolution": screen_resolution,
 			"screen_refresh_rate": screen_refresh_rate,
@@ -53,14 +51,15 @@ class SystemInfo:
 			"engine_version": engine_version,
 			"language": language,
 			"unique_device_id": unique_device_id,
-			"device_model": device_model,
-		}))
+			"device_model": device_model
+		}
 
+	func _to_string() -> String:
+		return str(self.to_dict())
 
+#endregion
 
-#-----------------------------------------------------------------------------
-# System Info Logic
-#-----------------------------------------------------------------------------
+#region Implementation
 
 var overrided_screen_id: int = -1
 var overrided_window_id: int = -1
@@ -202,3 +201,5 @@ func get_window_id() -> int:
 ## Set to -1 to use the default window ID (0).
 func set_window_id(id: int = -1) -> void:
 	overrided_window_id = id
+
+#endregion

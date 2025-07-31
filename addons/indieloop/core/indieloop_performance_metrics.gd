@@ -1,9 +1,12 @@
 class_name IndieLoopPerformanceMetrics
 extends RefCounted
 
+
+#region DataClasses
+
 ## This class holds a snapshot of performance metrics at a specific moment.
 class PerformanceSnapshot:
-	var snapshot_time_ms: float = Time.get_ticks_msec() # Timestamp in seconds
+	var snapshot_time_sec: float = Time.get_unix_time_from_system()
 	var fps: int
 	var ram_usage_mb: int
 	var vram_usage_mb: int
@@ -13,17 +16,23 @@ class PerformanceSnapshot:
 	var cpu_usage_percentage: float = 0.0
 	var gpu_usage_percentage: float = 0.0
 
-
-	func _to_string() -> String:
-		return str(Dictionary({
-			"snapshot_time_ms": snapshot_time_ms,
+	func to_dict() -> Dictionary:
+		return {
+			"snapshot_time_sec": snapshot_time_sec,
 			"fps": fps,
 			"ram_usage_mb": ram_usage_mb,
 			"cpu_usage_percentage": cpu_usage_percentage,
 			"gpu_usage_percentage": gpu_usage_percentage,
 			"vram_usage_mb": vram_usage_mb
-		}))
+		}
 
+	func _to_string() -> String:
+		return str(self.to_dict())
+
+#endregion
+
+
+#region Implementation
 
 ## Gathers a snapshot of the current performance metrics.
 func get_snapshot() -> PerformanceSnapshot:
@@ -52,3 +61,5 @@ func get_process_ram_usage() -> int:
 func get_vram_usage() -> int:
 	var vram_bytes = Performance.get_monitor(Performance.RENDER_VIDEO_MEM_USED)
 	return int(vram_bytes / (1024.0 * 1024.0))
+
+#endregion
