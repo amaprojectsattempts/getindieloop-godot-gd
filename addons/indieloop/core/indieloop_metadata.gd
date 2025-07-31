@@ -7,35 +7,81 @@ extends RefCounted
 enum Type {
 	TEXT, # String
 	JSON, # String that can be parsed as JSON
-	VECTOR2, # Vector2  instance
+	VECTOR2, # Vector2 instance
 	VECTOR3, # Vector3 instance
 	QUATERNION, # Quaternion instance
 	COLOR, # Color instance
 	BOOLEAN, # bool
 	INTEGER, # int
-	FLOAT # float
+	FLOAT, # float
+	NULL, # A null value
+	OTHER # A failover type for unsupported or unrecognized types
 }
 
-var is_valid: bool = true
 var name: String
 var value: Variant
 var type: Type = Type.TEXT
 
-func _init(p_name: String, p_value: Variant, p_type: Type = Type.TEXT):
+## The constructor now casts to a string as a final fallback.
+func _init(p_name: String, p_value: Variant):
 	self.name = p_name
-	self.type = p_type
 
-	# Validate that the provided value's type matches the specified enum type
-	if not _is_type_valid(p_value, p_type):
-		var expected_type_str := Type.find_key(p_type)
-		var received_type_str := type_string(typeof(p_value))
+	# Handle null values as a valid type
+	if p_value == null:
+		self.type = Type.NULL
+		self.value = null
+		return
 
-		push_error("Type mismatch for '%s'. Expected %s, but got %s." % [p_name, expected_type_str, received_type_str])
-		self.type = Type.TEXT
-		self.value = ""
-		self.is_valid = false
-	else:
-		self.value = p_value
+	var value_type = typeof(p_value)
+
+	match value_type:
+		TYPE_STRING:
+			var json_parser := JSON.new()
+			var error = json_parser.parse(p_value)
+			if error == OK:
+				self.type = Type.JSON
+			else:
+				self.type = Type.TEXT
+			self.value = p_value
+		TYPE_VECTOR2:
+			self.type = Type.VECTOR2
+			self.value = p_value
+		TYPE_VECTOR3:
+			self.type = Type.VECTOR3
+			self.value = p_value
+		TYPE_QUATERNION:
+			self.type = Type.QUATERNION
+			self.value = p_value
+		TYPE_COLOR:
+			self.type = Type.COLOR
+			self.value = p_value
+		TYPE_BOOL:
+			self.type = Type.BOOLEAN
+			self.value = p_value
+		TYPE_INT:
+			self.type = Type.INTEGER
+			self.value = p_value
+		TYPE_FLOAT:
+			self.type = Type.FLOAT
+			self.value = p_value
+		_:
+			# Fallback 1: Try to serialize the value to a JSON string
+			var json_string := JSON.stringify(p_value)
+
+			# If the value is not empty and can be serialized to JSON, use JSON type
+			if not json_string.is_empty():
+				self.type = Type.JSON
+				self.value = json_string
+			else:
+				# Fallback 2: Cast the value to a string and mark as OTHER
+				self.type = Type.OTHER
+				self.value = str(p_value)
+
+				# Warn the user that a fallback conversion occurred
+				var received_type_str := type_string(value_type)
+				var warning_msg := "Value for '%s' (type: %s) could not be serialized to JSON. It has been converted to a string as a fallback (TYPE_OTHER)."
+				push_warning(warning_msg % [name, received_type_str])
+
 
 ## Converts the metadata object to a dictionary for proper serialization.
 func to_dict() -> Dictionary:
@@ -61,38 +107,3 @@ func to_dict() -> Dictionary:
 
 func _to_string() -> String:
 	return str(self.to_dict())
-
-## Checks if the provided value is compatible with the specified metadata type.
-func _is_type_valid(p_value: Variant, p_type: Type) -> bool:
-	if p_value == null:
-		return false
-
-	var value_type = typeof(p_value)
-	match p_type:
-		Type.TEXT:
-			return value_type == TYPE_STRING
-		Type.JSON:
-			# For JSON, value must be a string and it must be valid JSON.
-			if value_type != TYPE_STRING:
-				return false
-
-			# An empty string is not valid JSON
-			if p_value.is_empty():
-				return false
-
-			return JSON.parse_string(p_value) != null
-		Type.VECTOR2:
-			return value_type == TYPE_VECTOR2
-		Type.VECTOR3:
-			return value_type == TYPE_VECTOR3
-		Type.QUATERNION:
-			return value_type == TYPE_QUATERNION
-		Type.COLOR:
-			return value_type == TYPE_COLOR
-		Type.BOOLEAN:
-			return value_type == TYPE_BOOL
-		Type.INTEGER:
-			return value_type == TYPE_INT
-		Type.FLOAT:
-			return value_type == TYPE_FLOAT
-	return false

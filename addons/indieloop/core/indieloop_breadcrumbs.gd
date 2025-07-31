@@ -40,14 +40,10 @@ func add(category: String, message: String, metadata: Array[IndieLoopMetadata] =
 	if _breadcrumbs.size() >= MAX_BREADCRUMBS:
 		_breadcrumbs.pop_front()
 
-	# Enforce the metadata limit.
+	# Stripe to latest metadata entries if the size exceeds MAX_METADATA_ENTRIES.
 	if metadata.size() > MAX_METADATA_ENTRIES:
-		metadata = metadata.slice(0, MAX_METADATA_ENTRIES)
-	
-	# Filter out invalid metadata entries.
-	metadata = metadata.filter(func(m: IndieLoopMetadata) -> bool:
-		return m.is_valid
-	)
+		metadata = metadata.slice(metadata.size() - MAX_METADATA_ENTRIES, metadata.size())
+		push_warning("Metadata size exceeds, trimming to latest %d entries." % [MAX_METADATA_ENTRIES])
 
 	# Create and add the new breadcrumb.
 	var breadcrumb = Breadcrumb.new()
